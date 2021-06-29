@@ -1,5 +1,6 @@
 import sys
 
+from Inverted_Index import create_index
 
 
 if __name__ == '__main__':
@@ -12,6 +13,7 @@ if __name__ == '__main__':
             print("missing corpus directory")
             exit(-1)
         corpus_dir = args[2]
+        create_index(corpus_dir)
     elif args[1] == 'query':
         if len(args) <= 3:
             print("missing index path and/or query")
