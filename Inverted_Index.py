@@ -79,8 +79,7 @@ class InvertedIndex:
         data = {
             "doc count": self.documents_count,
             "original path": self.corpus_path,
-            "dictionary": self.dictionary,
-            "docs dictionary": self.docs_dictionary
+            "dictionary": self.dictionary
         }
         json_object = json.dumps(data, indent=4)
         with open(INDEX_FILE,'w+') as json_file:
