@@ -3,6 +3,7 @@ import os
 import math
 from nltk.corpus import stopwords
 import json
+import numpy as np
 
 INDEX_FILE = "vsm_inverted_index.json"
 
@@ -10,9 +11,11 @@ class InvertedIndex:
     def __init__(self,path=''):
         self.corpus_path = path
         self.dictionary = {} # map words to a list of tuples of (document,score)
+        self.docs_dictionary = {} # map docs to a list of tuples of (word,score)
         self.documents_count = 0
 
     def build_dictionary(self):
+        """ build an inverted index (as a python dict) with words mapped to all the docs that have them (+ their score) """
         stop_words = set(stopwords.words("english"))
         
         self.documents_count = 0
@@ -53,32 +56,55 @@ class InvertedIndex:
                         self.dictionary[token] = [ [file_id,tf_dict[token]] ]
 
     def update_tfidf_scores(self):
+        """ after creating the initial inverted index with tf scores, compute idf scores and update the scores in the index to be tf-idf """
         for word in self.dictionary.keys():
             df = len(self.dictionary[word])
             idf_score = math.log2(self.documents_count/df)
             for doc in self.dictionary[word]:
                 doc[1] = doc[1] * idf_score # update from tf score to tf-idf score for each document
 
+    def create_docs_dictionary(self):
+        """ create the 'inverse' dictionary, mapping docs to all the words that they have (+ their score) """
+        for word in self.dictionary.keys():
+            for lst in self.dictionary[word]:
+                doc = lst[0]
+                score = lst[1]
+                if not doc in self.docs_dictionary.keys():
+                    self.docs_dictionary[doc] = [(word,score)]
+                else:
+                    self.docs_dictionary[doc].append((word,score))
+
     def save(self):
+        """ save all of the data to a json file """
         data = {
             "doc count": self.documents_count,
             "original path": self.corpus_path,
-            "dictionary": self.dictionary
+            "dictionary": self.dictionary,
+            "docs dictionary": self.docs_dictionary
         }
         json_object = json.dumps(data, indent=4)
         with open(INDEX_FILE,'w+') as json_file:
             json_file.write(json_object)
 
+    def get_docs_for_word(self, word):
+        """ given a word, return all of the docs that have it (with the relative score) """
+        if word in self.dictionary.keys():
+            return self.dictionary[word]
+        return []
+
 
 def load_index(path=INDEX_FILE):
+    """ load the data back from the saved json file """
     with open(path) as json_file:
         data = json.load(json_file)
     index = InvertedIndex(data["original path"])
     index.documents_count = data["doc count"]
     index.dictionary = data["dictionary"]
+    index.create_docs_dictionary()
     return index
 
 def create_index(path):
+    """ create the index for a given corpus path """
     print(f"Creating an inverted index on path {path}")
     index = InvertedIndex(path)
     print("Creating directory")
