@@ -1,5 +1,5 @@
 import sys
-
+from retrieve_doc import retrieval
 from Inverted_Index import create_index
 
 
@@ -19,7 +19,10 @@ if __name__ == '__main__':
             print("missing index path and/or query")
             exit(-1)
         index_path,query = args[2],args[3]
-
+        res = retrieval(index_path,query)
+        with open("ranked_query_docs.txt",'w+') as of:
+            for doc in res[:182]:
+                of.write(f"{doc}\n")
     else:
         print(f"wrong command provided - '{args[1]}'")
         exit(-1)

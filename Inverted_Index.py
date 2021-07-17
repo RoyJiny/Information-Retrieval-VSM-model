@@ -2,8 +2,13 @@ import xml.etree.ElementTree as ET
 import os
 import math
 from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
+from nltk.tokenize import word_tokenize
 import json
 import numpy as np
+import re
+
+# from yaml import tokens
 
 INDEX_FILE = "vsm_inverted_index.json"
 
@@ -13,11 +18,18 @@ class InvertedIndex:
         self.dictionary = {} # map words to a list of tuples of (document,score)
         self.docs_dictionary = {} # map docs to a list of tuples of (word,score)
         self.documents_count = 0
+        self.documents_lenght = {} # map each doc to it's lenght
 
+    def compute_doc_lenght(self):
+        for doc in self.docs_dictionary.keys():
+            doc_lenght = 0.0
+            for element in self.docs_dictionary[doc]:
+                doc_lenght += (element[1])**2
+            self.documents_lenght[doc] = math.sqrt(doc_lenght)
+    
     def build_dictionary(self):
         """ build an inverted index (as a python dict) with words mapped to all the docs that have them (+ their score) """
         stop_words = set(stopwords.words("english"))
-        
         self.documents_count = 0
         for file in os.listdir(self.corpus_path):
             xml_path = os.path.join(self.corpus_path,file)
@@ -35,7 +47,14 @@ class InvertedIndex:
                     text += record.find("./ABSTRACT").text.replace("\n"," ")
                 
                 # convert to tokens
-                tokens = [word.lower() for word in text.split(" ") if word != '']
+                tokens =[]
+                ps = PorterStemmer()
+                words = [re.sub("[^a-z]+","",word.lower()) for word in text.split(" ") if re.sub("[^a-z]+","",word) != '']
+                sentence = " ".join(words)
+                token_words = word_tokenize(sentence)
+                for t in token_words:
+                    tokens.append(ps.stem(t))
+
                 tf_dict = {}
                 
                 # remove stop words and duplications
@@ -80,6 +99,7 @@ class InvertedIndex:
             "doc count": self.documents_count,
             "original path": self.corpus_path,
             "dictionary": self.dictionary
+            # "doc_lenght": self.documents_lenght
         }
         json_object = json.dumps(data, indent=4)
         with open(INDEX_FILE,'w+') as json_file:
@@ -100,6 +120,8 @@ def load_index(path=INDEX_FILE):
     index.documents_count = data["doc count"]
     index.dictionary = data["dictionary"]
     index.create_docs_dictionary()
+    index.compute_doc_lenght()
+    # index.documents_lenght = data["doc_lenght"]
     return index
 
 def create_index(path):
@@ -110,5 +132,7 @@ def create_index(path):
     index.build_dictionary()
     print("Updating tf-idf scores")
     index.update_tfidf_scores()
+    print("Computing Documents lenght")
+    index.compute_doc_lenght()
     print(f"Saving index under {INDEX_FILE}")
     index.save()
