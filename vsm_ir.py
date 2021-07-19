@@ -21,7 +21,7 @@ if __name__ == '__main__':
         index_path,query = args[2],args[3]
         res = retrieval(index_path,query)
         with open("ranked_query_docs.txt",'w+') as of:
-            for doc in res[:182]:
+            for doc in res:
                 of.write(f"{doc}\n")
     else:
         print(f"wrong command provided - '{args[1]}'")
