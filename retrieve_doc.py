@@ -21,7 +21,7 @@ def retrieval(index_path,query):
         try:
             token_occurence = index.dictionary[token] # List of [file_id,tf_idf score]
         except:
-            pass
+            token_occurence = []
         for element in token_occurence:
             if not element[0] in retrieved_documents.keys():
                 retrieved_documents[element[0]] = 0.0
@@ -31,20 +31,18 @@ def retrieval(index_path,query):
     for doc in retrieved_documents.keys():
         retrieved_documents[doc] = retrieved_documents[doc]/(math.sqrt(query_lenght)*index.documents_lenght[doc])
     
-    sorted_retrived_doc = sorted(retrieved_documents.keys(), key=lambda x:x[1], reverse=True)
-    # print(sorted_retrived_doc)
+    sorted_retrived_doc = {k: v for k, v in reversed(sorted(retrieved_documents.items(), key=lambda item: item[1]))}
     return sorted_retrived_doc
 
 
 def extract_query_tokens(query):
-    # query_dict = {}
     stop_words = set(stopwords.words("english"))
-    # convert to tokens
-    # convert to tokens
     tokens =[]
     token_words2 =[]
     ps = PorterStemmer()
     lem = LancasterStemmer()
+
+    # convert to tokens
     words = [re.sub("[^a-z]+","",word.lower()) for word in query.split(" ") if re.sub("[^a-z]+","",word) != '' if not word in stop_words]
     sentence = " ".join(words)
     sentence = " ".join(nltk.RegexpTokenizer(r"\w+").tokenize(sentence))
@@ -54,26 +52,7 @@ def extract_query_tokens(query):
     for t in token_words2:
         tokens.append(lem.stem(t))
 
-    #             tf_dict = {}
-    # ps = PorterStemmer()
-    # lem = LancasterStemmer()
-    # text = query.lower()
-    # # Tokenizing the words in the paper.
-    # punctuation_tokenizer = nltk.RegexpTokenizer(r"\w+")
-    # tokens_without_punctuation = punctuation_tokenizer.tokenize(text)
-    # paper_str = " ".join(tokens_without_punctuation)
-    # token_arr = word_tokenize(paper_str)
-
-    # #  Removing stop words.
-    # token_arr_without_sw = [token for token in token_arr if len(token) > 1 if not token in stop_words if not (token.isdigit() or token[0] == '-' and token[1:].isdigit())]
-    # # Lancaster.
-    # lem_token_arr = [lem.stem(token) for token in token_arr_without_sw]
-
-    # # Stemming.
-    # tokens = [ps.stem(token) for token in lem_token_arr]
-
     tf_dict = {}
-    
     # remove stop words and duplications
     filtered_tokens = list(set([token for token in tokens if not token in stop_words]))
     # calculate tf scores and then normalize
@@ -83,25 +62,6 @@ def extract_query_tokens(query):
     for token in filtered_tokens:
         tf_dict[token] = tf_dict[token]/max_freq
     return tf_dict
-
-    # tokens =[]
-    # ps = PorterStemmer()
-    # words = [re.sub("[^a-z]+","",word.lower()) for word in query.split(" ") if re.sub("[^a-z]+","",word) != '']
-    # sentence = " ".join(words)
-    # token_words = word_tokenize(sentence)
-    # for t in token_words:
-    #     tokens.append(ps.stem(t))
-
-    # # tokens = [re.sub("[^a-z]+","",word.lower()) for word in query.split(" ") if re.sub("[^a-z]+","",word) != '']        
-    # # remove stop words and duplications
-    # filtered_tokens = list(set([token for token in tokens if not token in stop_words]))
-    # # calculate tf scores and then normalize
-    # for token in filtered_tokens:
-    #     query_dict[token] = tokens.count(token)
-    # max_freq = max([query_dict[token] for token in filtered_tokens])
-    # for token in filtered_tokens:
-    #     query_dict[token] = query_dict[token]/max_freq # K
-    # return query_dict
 
 def get_idf_score(index,token):
     idf_score = 0

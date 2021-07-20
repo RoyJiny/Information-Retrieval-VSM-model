@@ -104,8 +104,9 @@ class InvertedIndex:
         data = {
             "doc count": self.documents_count,
             "original path": self.corpus_path,
-            "dictionary": self.dictionary
-            # "doc_lenght": self.documents_lenght
+            "dictionary": self.dictionary,
+            "doc_dictionary": self.docs_dictionary,
+            "doc_lenght": self.documents_lenght
         }
         json_object = json.dumps(data, indent=4)
         with open(INDEX_FILE,'w+') as json_file:
@@ -117,27 +118,6 @@ class InvertedIndex:
             return self.dictionary[word]
         return []
 
-# def tokenize (text):
-    # ps = PorterStemmer()
-    # lem = LancasterStemmer()
-    # text = text.lower()
-    # # Tokenizing the words in the paper.
-    # punctuation_tokenizer = nltk.RegexpTokenizer(r"\w+")
-    # tokens_without_punctuation = punctuation_tokenizer.tokenize(text)
-    # paper_str = " ".join(tokens_without_punctuation)
-    # token_arr = word_tokenize(paper_str)
-
-    # # Removing stop words.
-    # token_arr_without_sw = [token for token in token_arr if len(token) > 1 if not token in stop_words if
-    #                         not (token.isdigit()
-    #                                 or token[0] == '-' and token[1:].isdigit())]
-    # # Lancaster.
-
-    # lem_token_arr = [lem.stem(token) for token in token_arr_without_sw]
-
-    # # Stemming.
-    # stem_token_arr = [ps.stem(token) for token in lem_token_arr]
-
 def load_index(path=INDEX_FILE):
     """ load the data back from the saved json file """
     with open(path) as json_file:
@@ -145,9 +125,10 @@ def load_index(path=INDEX_FILE):
     index = InvertedIndex(data["original path"])
     index.documents_count = data["doc count"]
     index.dictionary = data["dictionary"]
-    index.create_docs_dictionary()
-    index.compute_doc_lenght()
-    # index.documents_lenght = data["doc_lenght"]
+    # index.create_docs_dictionary()
+    # index.compute_doc_lenght()
+    index.docs_dictionary = data["doc_dictionary"]
+    index.documents_lenght = data["doc_lenght"]
     return index
 
 def create_index(path):
@@ -158,6 +139,8 @@ def create_index(path):
     index.build_dictionary()
     print("Updating tf-idf scores")
     index.update_tfidf_scores()
+    print("creating doc_dictionary")
+    index.create_docs_dictionary()
     print("Computing Documents lenght")
     index.compute_doc_lenght()
     print(f"Saving index under {INDEX_FILE}")
